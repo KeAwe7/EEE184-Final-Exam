@@ -1,0 +1,101 @@
+A51 MACRO ASSEMBLER  FINAL02                                                              05/07/2024 20:08:58 PAGE     1
+
+
+MACRO ASSEMBLER A51 V8.2.7.0
+OBJECT MODULE PLACED IN .\Objects\Final02.obj
+ASSEMBLER INVOKED BY: C:\Keil_v5\C51\BIN\A51.EXE Final02.asm SET(SMALL) DEBUG PRINT(.\Listings\Final02.lst) OBJECT(.\Obj
+                      ects\Final02.obj) EP
+
+LOC  OBJ            LINE     SOURCE
+
+  00A5                 1     LCD_RW EQU P2.5
+  00A6                 2     LCD_RS EQU P2.6
+  00A7                 3     LCD_EN EQU P2.7
+  0080                 4     LCD_DATAPINS EQU P0
+                       5     
+                       6     
+0000                   7     LCD_INIT:
+0000 7F38              8             MOV R7, #38H
+0002 120019            9             LCALL LCD_WRC
+0005 7F0C             10             MOV R7, #0CH
+0007 120019           11             LCALL LCD_WRC
+000A 7F06             12             MOV R7, #06H
+000C 120019           13             LCALL LCD_WRC
+000F 7F01             14             MOV R7, #01H
+0011 120019           15             LCALL LCD_WRC
+0014 7F80             16             MOV R7, #80H
+0016 120019           17             LCALL LCD_WRC
+                      18             
+0019                  19     LCD_WRC: ; LCD Write Command
+0019 C2A7             20             CLR LCD_EN
+001B C2A6             21             CLR LCD_RS
+001D C2A5             22             CLR LCD_RW
+                      23             
+001F 8F80             24             MOV P0, R7
+0021 7F01             25             MOV R7, #01H
+0023 7E00             26             MOV R6, #00H
+0025 114B             27             ACALL DELAY_1MS
+                      28             
+0027 D2A7             29             SETB LCD_EN
+0029 7F05             30             MOV R7, #05H
+002B 7E00             31             MOV R6, #00H
+002D 114B             32             ACALL DELAY_1MS
+                      33             
+002F C2A7             34             CLR LCD_EN
+0031 22               35     RET
+                      36     
+0032                  37     LCD_WRD: ; LCD Write Data
+0032 C2A7             38             CLR LCD_EN
+0034 D2A6             39             SETB LCD_RS
+0036 C2A5             40             CLR LCD_RW
+                      41             
+0038 8F80             42             MOV LCD_DATAPINS, R7
+003A 7F01             43             MOV R7, #01H
+003C 7E00             44             MOV R6, #00H
+003E 114B             45             ACALL DELAY_1MS
+                      46             
+0040 D2A7             47             SETB LCD_EN
+0042 7F05             48             MOV R7, #05H
+0044 7E00             49             MOV R6, #00H
+0046 114B             50             ACALL DELAY_1MS
+                      51             
+0048 C2A7             52             CLR LCD_EN
+004A 22               53     RET
+                      54     
+                      55     
+004B                  56     DELAY_1MS:
+004B 7D01             57                     MOV R5, #1
+A51 MACRO ASSEMBLER  FINAL02                                                              05/07/2024 20:08:58 PAGE     2
+
+004D 7CFF             58             H1:     MOV R4, #255
+004F DCFE             59             H2:     DJNZ R4, H2
+0051 DDFA             60                     DJNZ R5, H1
+0053 22               61     RET
+                      62             
+                      63     END     
+A51 MACRO ASSEMBLER  FINAL02                                                              05/07/2024 20:08:58 PAGE     3
+
+SYMBOL TABLE LISTING
+------ ----- -------
+
+
+N A M E             T Y P E  V A L U E   ATTRIBUTES
+
+DELAY_1MS. . . . .  C ADDR   004BH   A   
+H1 . . . . . . . .  C ADDR   004DH   A   
+H2 . . . . . . . .  C ADDR   004FH   A   
+LCD_DATAPINS . . .  D ADDR   0080H   A   
+LCD_EN . . . . . .  B ADDR   00A0H.7 A   
+LCD_INIT . . . . .  C ADDR   0000H   A   
+LCD_RS . . . . . .  B ADDR   00A0H.6 A   
+LCD_RW . . . . . .  B ADDR   00A0H.5 A   
+LCD_WRC. . . . . .  C ADDR   0019H   A   
+LCD_WRD. . . . . .  C ADDR   0032H   A   
+P0 . . . . . . . .  D ADDR   0080H   A   
+P2 . . . . . . . .  D ADDR   00A0H   A   
+
+
+REGISTER BANK(S) USED: 0 
+
+
+ASSEMBLY COMPLETE.  0 WARNING(S), 0 ERROR(S)

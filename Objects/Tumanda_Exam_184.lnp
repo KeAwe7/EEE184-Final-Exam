@@ -1,0 +1,3 @@
+".\Objects\Final01.obj" 
+TO ".\Objects\Tumanda_Exam_184" 
+PRINT(".\Listings\Tumanda_Exam_184.m51") RAMSIZE(256) 

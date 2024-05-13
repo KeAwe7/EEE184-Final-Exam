@@ -1,0 +1,359 @@
+A51 MACRO ASSEMBLER  FINAL                                                                05/07/2024 17:17:05 PAGE     1
+
+
+MACRO ASSEMBLER A51 V8.2.7.0
+OBJECT MODULE PLACED IN .\Objects\Final.obj
+ASSEMBLER INVOKED BY: C:\Keil_v5\C51\BIN\A51.EXE Final.asm SET(SMALL) DEBUG PRINT(.\Listings\Final.lst) OBJECT(.\Objects
+                      \Final.obj) EP
+
+LOC  OBJ            LINE     SOURCE
+
+  00A5                 1     LCD_RW EQU P2.5
+  00A6                 2     LCD_RS EQU P2.6
+  00A7                 3     LCD_EN EQU P2.7
+  0080                 4     LCD_DATAPINS EQU P0
+                       5             
+0000 12015A            6             LCALL LCD_INIT
+                       7     
+0003                   8     MAIN:
+0003 E4                9     CLR A
+0004 F50A             10     MOV 0AH, A      ; Counter to manage LCD line breaks
+0006 F50B             11     MOV 0BH, A      ; Counter to manage rows of three numbers
+                      12     
+                      13     
+                      14     
+0008 750827           15             MOV 08H, #27H   ; 270FH = 9999D Store higher byte to 08H
+000B 75090F           16             MOV 09H, #0FH   ; Store lower byte to 09H
+000E                  17     AGAIN:
+000E AE08             18             MOV R6, 08H             ; Move higher byte to R6
+0010 AF09             19             MOV R7, 09H             ; Move lower byte to R7
+0012 7C00             20             MOV R4, #00H    ; Initialize 7 (0007)
+0014 7D07             21             MOV R5, #07H
+0016 120087           22             LCALL DIVISION
+0019 ED               23             MOV A, R5
+001A 4C               24             ORL A, R4
+001B 6051             25             JZ HERE1
+001D AE08             26             MOV R6, 08H
+001F AF09             27             MOV R7, 09H
+0021 7C00             28             MOV R4, #00H
+0023 7D09             29             MOV R5, #09H
+0025 120087           30             LCALL DIVISION
+0028 ED               31             MOV A, R5
+0029 4C               32             ORL A, R4
+002A 7031             33             JNZ SKP
+                      34             
+002C E50A             35             MOV A, 0AH
+002E 7004             36             JNZ SKPP0
+0030 AF80             37             MOV R7, LCD_DATAPINS
+0032 8007             38             SJMP SKPP
+0034                  39     SKPP0:
+0034 E50A             40             MOV A, 0AH
+0036 B40305           41             CJNE A, #03H, SKP0
+0039 7FC0             42             MOV R7, #0C0H
+003B                  43     SKPP:
+003B 12017F           44             LCALL LCD_WRITE_COM
+003E                  45     SKP0:
+003E AF09             46             MOV R7, 09H
+0040 AE08             47             MOV R6, 08H
+0042 1200F1           48             LCALL LCD_DISPLAY
+0045 7F2C             49             MOV R7, #2CH
+0047 12018F           50             LCALL LCD_WRITE_DATA
+004A 050A             51             INC 0AH
+004C E50A             52             MOV A, 0AH
+004E B40605           53             CJNE A, #06H, SKP2
+0051 E4               54             CLR A
+0052 F50A             55             MOV 0AH, A
+0054 050B             56             INC 0BH
+0056                  57     SKP2:
+A51 MACRO ASSEMBLER  FINAL                                                                05/07/2024 17:17:05 PAGE     2
+
+0056 7F64             58             MOV R7, #64H
+0058 7E00             59             MOV R6, #00H
+005A 1201A1           60             LCALL DELAY
+                      61             
+005D                  62             SKP:
+005D E509             63             MOV A, 09H
+005F 1509             64             DEC 09H
+0061 7002             65             JNZ SKP3
+0063 1508             66             DEC 08H
+0065                  67     SKP3:
+0065 C3               68             CLR C
+0066 E508             69             MOV A, 08H
+0068 9400             70             SUBB A, #00H
+006A 50A2             71             JNC AGAIN
+006C 80FE             72             THIS:   SJMP THIS
+                      73             
+                      74             
+006E                  75     HERE1:
+006E E50A             76             MOV A, 0AH
+0070 7004             77             JNZ SKIP
+0072 AF80             78             MOV R7, LCD_DATAPINS
+0074 8007             79             SJMP WRITE
+0076                  80     SKIP:   
+0076 E50A             81             MOV A, 0AH
+0078 B40305           82             CJNE A, #03H, DONT_WRITE
+007B 7FC0             83             MOV R7, #0C0H
+007D                  84     WRITE:
+007D 12018F           85             LCALL LCD_WRITE_DATA
+                      86             
+0080                  87     DONT_WRITE:
+0080 AF09             88             MOV R7, 09H
+0082 AE08             89             MOV R6, 08H
+0084 1200F1           90             LCALL LCD_DISPLAY
+                      91             
+0087                  92     DIVISION:
+0087 BC000B           93             CJNE R4, #00H, EXCHANGE
+008A BE0027           94             CJNE R6, #00H, SKIP1
+008D EF               95             MOV A, R7
+008E 8DF0             96             MOV B, R5
+0090 84               97             DIV AB
+0091 FF               98             MOV R7, A
+0092 ADF0             99             MOV R5, B
+0094 22              100     RET
+                     101             
+0095                 102             EXCHANGE:
+0095 E4              103             CLR A
+0096 CC              104                     XCH A, R4
+0097 F8              105                     MOV R0, A
+0098 75F008          106                     MOV B, #08H
+                     107     
+009B EF              108             BACK:   MOV A, R7
+009C 2F              109                             ADD A, R7
+009D FF              110                             MOV R7, A
+009E EE              111                             MOV A, R6
+009F 33              112                             RLC A
+00A0 FE              113                             MOV R6, A
+00A1 EC              114                             MOV A, R4
+00A2 33              115                             RLC A
+00A3 FC              116                             MOV R4, A
+00A4 EE              117                             MOV A, R6
+00A5 9D              118                             SUBB A, R5
+00A6 EC              119                             MOV A, R4
+00A7 98              120                             SUBB A, R0
+00A8 4005            121                             JC NEXT
+00AA FC              122                             MOV R4, A
+00AB EE              123                             MOV A, R6
+A51 MACRO ASSEMBLER  FINAL                                                                05/07/2024 17:17:05 PAGE     3
+
+00AC 9D              124                             SUBB A, R5
+00AD FE              125                             MOV R6, A
+00AE 0F              126                             INC R7
+00AF D5F0E9          127             NEXT:   DJNZ B, BACK
+00B2 E4              128                             CLR A
+00B3 CE              129                             XCH A, R6
+00B4 FD              130             SKIP1:  MOV R5, A
+00B5 22              131     RET
+00B6 ED              132                             MOV A, R5
+00B7 F8              133                             MOV R0, A
+00B8 F5F0            134                             MOV B, A
+00BA EE              135                             MOV A, R6
+00BB 84              136                             DIV AB
+00BC 20D219          137                             JB OV, NEXT4
+00BF FE              138                             MOV R6, A
+00C0 ADF0            139                             MOV R5, B
+00C2 75F008          140                             MOV B, #08H
+00C5 EF              141             BACK2:  MOV A, R7
+00C6 2F              142                             ADD A, R7
+00C7 FF              143                             MOV R7, A
+00C8 ED              144                             MOV A, R5
+00C9 33              145                             RLC A
+00CA FD              146                             MOV R5, A
+00CB 4007            147                             JC NEXT2
+00CD 98              148                             SUBB A, R0
+00CE 5006            149                             JNC NEXT3
+00D0 D5F0F2          150                             DJNZ B, BACK2
+00D3 22              151             RET
+00D4 C3              152             NEXT2:  CLR C
+00D5 98              153                             SUBB A, R0
+00D6 FD              154             NEXT3:  MOV R5, A
+00D7 0F              155                             INC R7
+00D8 D5F0EA          156             NEXT4:  DJNZ B, BACK2
+00DB 22              157             RET
+00DC C2A5            158                             CLR LCD_RW
+00DE 8F80            159                             MOV LCD_DATAPINS, R7
+00E0 7F01            160                             MOV R7, #01H
+00E2 7E00            161                             MOV R6, #00H
+00E4 1201A1          162                             LCALL DELAY
+00E7 D2A7            163                             SETB LCD_EN
+00E9 7F05            164                             MOV R7, #05H
+00EB 7E00            165                             MOV R6, #00H
+00ED 1201A1          166                             LCALL DELAY
+00F0 22              167             RET
+                     168                             
+00F1                 169     LCD_DISPLAY:
+00F1 AB07            170             MOV R3, 07H
+00F3 AA06            171             MOV R2, 06H
+                     172             
+00F5 7C03            173             MOV R4, #03H
+00F7 7DE8            174             MOV R5, #0E8H
+00F9 120087          175             LCALL DIVISION
+                     176             
+00FC 7C00            177             MOV R4, #00H
+00FE 7D0A            178             MOV R5, #0AH
+0100 120087          179             LCALL DIVISION
+0103 8D0C            180             MOV 0CH, R5
+                     181             
+0105 7C00            182             MOV R4, #00H
+0107 7D64            183             MOV R5, #64H
+0109 AF03            184             MOV R7, 03H
+010B AE02            185             MOV R6, 02H
+010D 120087          186             LCALL DIVISION
+                     187             
+0110 7C00            188             MOV R4, #00H
+0112 7D0A            189             MOV R5, #0AH
+A51 MACRO ASSEMBLER  FINAL                                                                05/07/2024 17:17:05 PAGE     4
+
+0114 120087          190             LCALL DIVISION
+0117 8D0D            191             MOV 0DH, R5
+                     192             
+0119 7C00            193             MOV R4, #00H
+011B 7D0A            194             MOV R5, #0AH
+011D AF03            195             MOV R7, 03H
+011F AE02            196             MOV R6, 02H
+0121 120087          197             LCALL DIVISION
+                     198             
+0124 7C00            199             MOV R4, #00H
+0126 7D0A            200             MOV R5, #0AH
+0128 120087          201             LCALL DIVISION
+012B 8D0E            202             MOV 0EH, R5
+                     203             
+012D AE02            204             MOV R6, 02H
+012F AF03            205             MOV R7, 03H
+0131 7C00            206             MOV R4, #00H
+0133 7D0A            207             MOV R5, #0AH
+0135 120087          208             LCALL DIVISION
+0138 8D0F            209             MOV 0FH, R5
+                     210             
+013A E50C            211             MOV A, 0CH
+013C 2430            212             ADD A, #30H
+013E FF              213             MOV R7, A
+013F 12018F          214             LCALL LCD_WRITE_DATA
+                     215             
+0142 E50D            216             MOV A, 0DH
+0144 2430            217             ADD A, #30H
+0146 FF              218             MOV R7, A
+0147 12018F          219             LCALL LCD_WRITE_DATA
+                     220             
+014A E50E            221             MOV A, 0EH
+014C 2430            222             ADD A, #30H
+014E FF              223             MOV R7, A
+014F 12018F          224             LCALL LCD_WRITE_DATA
+                     225             
+0152 E50F            226             MOV A, 0FH
+0154 2430            227             ADD A, #30H
+0156 FF              228             MOV R7, A
+0157 12018F          229             LCALL LCD_WRITE_DATA
+                     230             
+                     231             
+015A                 232     LCD_INIT:
+015A 7F38            233             MOV R7, #38H ; Function Set: 8-bit data, 2-line display, 5x8 font
+015C 12017F          234             LCALL LCD_WRITE_COM
+015F 7F0C            235             MOV R7, #0CH ; Display On/Off Control: Display on, cursor off, blink off
+0161 12017F          236             LCALL LCD_WRITE_COM
+0164 7F06            237             MOV R7, #06H    ; Entry Mode Set: Increment cursor position, no display shift
+0166 12017F          238             LCALL LCD_WRITE_COM
+0169 7F01            239             MOV R7, #01H    ; Clear Display
+016B 12017F          240             LCALL LCD_WRITE_COM
+016E AF80            241             MOV R7, LCD_DATAPINS ; Set DDRAM Address: Set cursor to beginning of first line
+0170 12017F          242             LCALL LCD_WRITE_COM
+0173 787F            243             MOV R0, #07FH
+0175 E4              244             CLR A
+0176                 245             AGAIN1:
+0176 F6              246             MOV @R0, A
+0177 D8FD            247             DJNZ R0, AGAIN1
+0179 75810F          248             MOV SP, #0FH
+017C 020003          249             LJMP MAIN
+                     250             
+017F                 251     LCD_WRITE_COM:
+017F C2A7            252             CLR LCD_EN
+0181 C2A6            253             CLR LCD_RS
+0183 C2A5            254             CLR LCD_RW
+                     255             
+A51 MACRO ASSEMBLER  FINAL                                                                05/07/2024 17:17:05 PAGE     5
+
+0185 8F80            256             MOV LCD_DATAPINS, R7
+0187 31A1            257             ACALL DELAY
+                     258             
+0189 D2A7            259             SETB LCD_EN
+018B 31A1            260             ACALL DELAY
+018D C2A7            261             CLR LCD_EN
+                     262             
+018F                 263     LCD_WRITE_DATA:
+018F C2A7            264             CLR LCD_EN
+0191 D2A6            265             SETB LCD_RS
+0193 C2A5            266             CLR LCD_RW
+                     267             
+0195 8F80            268             MOV LCD_DATAPINS, R7
+0197 31A1            269             ACALL DELAY
+                     270             
+0199 D2A7            271             SETB LCD_EN
+019B 31A1            272             ACALL DELAY
+019D C2A7            273             CLR     LCD_EN
+                     274             
+019F                 275     END1:
+019F 80FE            276             SJMP $
+                     277             
+01A1                 278     DELAY:                          ; Theoretically 1ms delay
+01A1 7901            279                     MOV R1, #1
+01A3 7AFF            280             H1:     MOV R2, #255
+01A5 DAFE            281             H2: DJNZ R2, H2
+01A7 D9FA            282                     DJNZ R1, H1
+01A9 22              283             RET
+                     284             
+                     285     
+                     286             
+                     287     END
+A51 MACRO ASSEMBLER  FINAL                                                                05/07/2024 17:17:05 PAGE     6
+
+SYMBOL TABLE LISTING
+------ ----- -------
+
+
+N A M E             T Y P E  V A L U E   ATTRIBUTES
+
+AGAIN. . . . . . .  C ADDR   000EH   A   
+AGAIN1 . . . . . .  C ADDR   0176H   A   
+B. . . . . . . . .  D ADDR   00F0H   A   
+BACK . . . . . . .  C ADDR   009BH   A   
+BACK2. . . . . . .  C ADDR   00C5H   A   
+DELAY. . . . . . .  C ADDR   01A1H   A   
+DIVISION . . . . .  C ADDR   0087H   A   
+DONT_WRITE . . . .  C ADDR   0080H   A   
+END1 . . . . . . .  C ADDR   019FH   A   
+EXCHANGE . . . . .  C ADDR   0095H   A   
+H1 . . . . . . . .  C ADDR   01A3H   A   
+H2 . . . . . . . .  C ADDR   01A5H   A   
+HERE1. . . . . . .  C ADDR   006EH   A   
+LCD_DATAPINS . . .  D ADDR   0080H   A   
+LCD_DISPLAY. . . .  C ADDR   00F1H   A   
+LCD_EN . . . . . .  B ADDR   00A0H.7 A   
+LCD_INIT . . . . .  C ADDR   015AH   A   
+LCD_RS . . . . . .  B ADDR   00A0H.6 A   
+LCD_RW . . . . . .  B ADDR   00A0H.5 A   
+LCD_WRITE_COM. . .  C ADDR   017FH   A   
+LCD_WRITE_DATA . .  C ADDR   018FH   A   
+MAIN . . . . . . .  C ADDR   0003H   A   
+NEXT . . . . . . .  C ADDR   00AFH   A   
+NEXT2. . . . . . .  C ADDR   00D4H   A   
+NEXT3. . . . . . .  C ADDR   00D6H   A   
+NEXT4. . . . . . .  C ADDR   00D8H   A   
+OV . . . . . . . .  B ADDR   00D0H.2 A   
+P0 . . . . . . . .  D ADDR   0080H   A   
+P2 . . . . . . . .  D ADDR   00A0H   A   
+SKIP . . . . . . .  C ADDR   0076H   A   
+SKIP1. . . . . . .  C ADDR   00B4H   A   
+SKP. . . . . . . .  C ADDR   005DH   A   
+SKP0 . . . . . . .  C ADDR   003EH   A   
+SKP2 . . . . . . .  C ADDR   0056H   A   
+SKP3 . . . . . . .  C ADDR   0065H   A   
+SKPP . . . . . . .  C ADDR   003BH   A   
+SKPP0. . . . . . .  C ADDR   0034H   A   
+SP . . . . . . . .  D ADDR   0081H   A   
+THIS . . . . . . .  C ADDR   006CH   A   
+WRITE. . . . . . .  C ADDR   007DH   A   
+
+
+REGISTER BANK(S) USED: 0 
+
+
+ASSEMBLY COMPLETE.  0 WARNING(S), 0 ERROR(S)

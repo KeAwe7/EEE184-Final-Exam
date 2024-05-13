@@ -1,0 +1,421 @@
+A51 MACRO ASSEMBLER  FINAL01                                                              05/08/2024 21:05:17 PAGE     1
+
+
+MACRO ASSEMBLER A51 V8.2.7.0
+OBJECT MODULE PLACED IN .\Objects\Final01.obj
+ASSEMBLER INVOKED BY: C:\Keil_v5\C51\BIN\A51.EXE Final01.asm SET(SMALL) DEBUG PRINT(.\Listings\Final01.lst) OBJECT(.\Obj
+                      ects\Final01.obj) EP
+
+LOC  OBJ            LINE     SOURCE
+
+  00A5                 1     LCD_RW EQU P2.5
+  00A6                 2     LCD_RS EQU P2.6
+  00A7                 3     LCD_EN EQU P2.7
+  0080                 4     LCD_DATAPINS EQU P0
+                       5     
+                       6     ; Task: When reaching 0, it must repeat
+                       7             
+0000                   8     MAIN:
+0000 E4                9             CLR A
+0001 F52D             10             MOV 02DH, A             ; LCD Counter
+0003 F52E             11             MOV 02EH, A             ; Row
+0005 1201C1           12             LCALL LCD_INIT
+                      13             
+0008 751027           14             MOV 10H, #27H   ; 270FH = 9999D; 03E7H = 0999D; 0063H = 0099D
+000B 75110F           15             MOV 11H, #0FH   ; Dividend
+000E                  16     MAIN_LOOP:
+                      17     
+000E AE10             18             MOV R6, 10H             ; HB of Dividend
+0010 AF11             19             MOV R7, 11H             ; LB of Dividend
+                      20             
+0012 BE0005           21             CJNE R6, #0, CONT1
+0015 BF0002           22             CJNE R7, #0, CONT1
+0018 80E6             23             JMP MAIN
+                      24             
+001A                  25             CONT1:
+                      26             
+001A 7C00             27             MOV R4, #00H    ; Prepare Divisor
+001C 7D07             28             MOV R5, #07H    ; 
+001E 12007A           29             LCALL DIVISION  ; Divide by 7
+0021 ED               30             MOV A, R5
+0022 4C               31             ORL A, R4
+0023 600F             32             JZ MAIN_SKIP1   ; Jump if no remainder (Divisible by 7)
+                      33                                             ; If not divisible, try 9
+0025 AE10             34             MOV R6, 10H
+0027 AF11             35             MOV R7, 11H
+                      36             
+0029 7C00             37             MOV R4, #00H    ; Prepare Divisor
+002B 7D09             38             MOV R5, #09H    ; 
+002D 12007A           39             LCALL DIVISION  ; Divide by 9
+0030 ED               40             MOV A, R5
+0031 4C               41             ORL A, R4
+0032 7034             42             JNZ MAIN_SKIP2  ; Jump if has remainder
+                      43             
+0034                  44     MAIN_SKIP1:                     ; 
+0034 E52D             45             MOV A, 02DH             ; LCD Counter
+0036 7007             46             JNZ MAIN_SKIP3  ; Jump if A == 0
+                      47             
+0038 7F80             48             MOV R7, #80H    ; Move cursor to start at first line
+003A 12018F           49             LCALL LCD_WRC   
+003D 800E             50             SJMP MAIN_SKIP4
+                      51             
+003F                  52     MAIN_SKIP3:
+003F E52D             53             MOV A, 02DH
+0041 B40305           54             CJNE A, #03H, MAIN_SKIP5
+                      55             
+0044 7FC0             56             MOV R7, #0C0H
+0046 12018F           57             LCALL LCD_WRC
+A51 MACRO ASSEMBLER  FINAL01                                                              05/08/2024 21:05:17 PAGE     2
+
+0049                  58     MAIN_SKIP5:
+0049 AF11             59             MOV R7, 11H
+004B AE10             60             MOV R6, 10H
+004D                  61     MAIN_SKIP4:                     ; Display number on LCD
+004D 1200E0           62             LCALL LCD_DISPLAY_NUMBERS
+0050 7F2C             63             MOV R7, #2CH    ; Display comma after number
+0052 1201A8           64             LCALL LCD_WRD
+0055 052D             65             INC 02DH                ; Increment LCD Counter
+0057 E52D             66             MOV A, 02DH             ; Move to A to read
+0059 B40605           67             CJNE A, #06H, MAIN_SKIP6        ; Jump if LCD Counter = 6: Skip
+005C E4               68             CLR A                   ; Clear A
+005D F52D             69             MOV 02DH, A             ; Clear LCD Counter
+005F 052E             70             INC 02EH                ; Increment Row
+0061                  71     MAIN_SKIP6:
+0061 7F64             72             MOV R7, #64H    ; For delay
+0063 7E00             73             MOV R6, #00H
+0065 120155           74             LCALL DELAY
+0068                  75     MAIN_SKIP2:
+0068 E511             76             MOV A, 11H              ; Load LB-end
+006A 1511             77             DEC 11H                 ; Decrement LB-end
+006C 7002             78             JNZ MAIN_SKIP7  ; Jump if LB-end is not 0
+006E 1510             79             DEC 10H                 ; If zero, decrement HB-end as well
+0070                  80     MAIN_SKIP7:
+0070 C3               81             CLR C                   ; Clear C
+0071 E510             82             MOV A, 10H              ; Store HB-end
+0073 9400             83             SUBB A, #00H    ; C = 1 if (HB-end) > 00
+                      84                                             ; 
+0075 5097             85             JNC MAIN_LOOP
+                      86             ;JMP MAIN_LOOP
+0077 8087             87             JMP MAIN
+0079 22               88     RET
+                      89                     
+007A                  90     DIVISION:
+                      91             ; Input: Dividend = R6R7 , Divisor = R4R5
+                      92             ; Output: Quotient = R6R7, Remainder = R5
+                      93             
+007A BC000B           94             CJNE R4, #00H, DIV_JMP1 ; Jump if HB-sor has a value
+007D BE0029           95             CJNE R6, #00H, DIV_JMP2 ; Jump if HB-end has a value
+                      96             ; Else if both HB of dividend and divisor is 0
+                      97             ; Just divide LB of both
+0080 EF               98             MOV A, R7       ; LB of Dividend
+0081 8DF0             99             MOV B, R5       ; LB of Divisor
+0083 84              100             DIV AB
+0084 FF              101             MOV R7, A       ; Move quotient to R7
+0085 ADF0            102             MOV R5, B       ; Move remainder to R5
+0087 22              103     RET
+0088                 104     DIV_JMP1:
+0088 E4              105             CLR A
+0089 CC              106             XCH A, R4       ; Store HB-sor to A and clear R4
+008A F8              107             MOV R0, A       ; Store HB-sor to R0
+                     108     
+008B 75F008          109             MOV B, #08H     ; Initialize loop counter (8 times for 8 bits in a byte)
+008E                 110     DIV_LOOP1:
+008E EF              111             MOV A, R7       ; Load LB of Dividend
+008F 2F              112             ADD A, R7       ; Add with itself
+0090 FF              113             MOV R7, A       ; Store sum back
+                     114             
+0091 EE              115             MOV A, R6       ; Load HB of Dividend
+0092 33              116             RLC A           ; Rotate left w Carry
+0093 FE              117             MOV R6, A       ; Store rotated HB back
+                     118             
+0094 EC              119             MOV A, R4       ; Load HB of Divisor
+0095 33              120             RLC A           ; Rotate left w Carry
+0096 FC              121             MOV R4, A       ; Store rotated HB back
+                     122             
+0097 EE              123             MOV A, R6       ; Load rotated HB of Dividend
+A51 MACRO ASSEMBLER  FINAL01                                                              05/08/2024 21:05:17 PAGE     3
+
+0098 9D              124             SUBB A, R5      ; Subtract with LB of Divisor
+                     125             
+0099 EC              126             MOV A, R4       ; Load rotated HB of Divisor
+009A 98              127             SUBB A, R0      ; Subtract with original HB of Divisor
+009B 4005            128             JC DIV_JMP3     ; Jump if borrow happened, meaning R4(00) < R0 (HB-sor)
+                     129             
+009D FC              130             MOV R4, A       ; Store difference to R4
+009E EE              131             MOV A, R6       ; Load HB of Dividend
+009F 9D              132             SUBB A, R5      ; Subtract HB-end with LB-sor
+                     133             
+00A0 FE              134             MOV R6, A       ; Store difference to R6
+00A1 0F              135             INC R7          ; Add 1 to LB-end
+00A2                 136     DIV_JMP3:
+00A2 D5F0E9          137             DJNZ B, DIV_LOOP1       ; Repeat 8 times
+00A5 E4              138             CLR A           ; Clear A
+00A6 CE              139             XCH A, R6       ; Exchange with difference
+00A7 FD              140             MOV R5, A       ; Store difference to R5, aka Remainder
+00A8 22              141     RET
+00A9                 142     DIV_JMP2:
+00A9 ED              143             MOV A, R5       ; Load LB-sor
+00AA F8              144             MOV R0, A       ; Store LB-sor to R0
+00AB F5F0            145             MOV B, A        ; Store LB-sor to B
+00AD EE              146             MOV A, R6       ; Load HB-end
+00AE 84              147             DIV AB          ; HB-end/LB-sor
+00AF 20D21C          148             JB OV, DIV_JMP4 ; Jump if division with 0 happened
+00B2 FE              149             MOV R6, A       ; Store quotient to R6
+00B3 ADF0            150             MOV R5, B       ; Store remainder to R5
+                     151     
+00B5 75F008          152             MOV B, #08H
+00B8                 153     DIV_LOOP2:
+00B8 EF              154             MOV A, R7       ; Load LB-end
+00B9 2F              155             ADD A, R7       ; Add with itself
+00BA FF              156             MOV R7, A       ; Store sum to R7
+                     157             
+00BB ED              158             MOV A, R5       ; Load remainder
+00BC 33              159             RLC     A               ; Rotate left w carry
+00BD FD              160             MOV R5, A       ; Store rotated value back
+00BE 4007            161             JC DIV_JMP5
+                     162             
+00C0 98              163             SUBB A, R0      ; Subtract rotated value - LB-sor
+00C1 5006            164             JNC DIV_JMP6
+00C3 D5F0F2          165             DJNZ B, DIV_LOOP2
+00C6 22              166     RET
+00C7                 167     DIV_JMP5:
+00C7 C3              168             CLR C
+00C8 98              169             SUBB A, R0
+00C9                 170     DIV_JMP6:
+00C9 FD              171             MOV R5, A
+00CA 0F              172             INC R7
+00CB D5F0EA          173             DJNZ B, DIV_LOOP2
+00CE                 174     DIV_JMP4:
+00CE 22              175     RET
+00CF C2A5            176             CLR LCD_RW
+00D1 8F80            177             MOV LCD_DATAPINS, R7
+00D3 7F01            178             MOV R7, #01H
+00D5 7E00            179             MOV R6, #00H
+00D7 120176          180             LCALL DELAY_1MS
+00DA D2A7            181             SETB LCD_EN
+00DC 7F05            182             MOV R7, #05H
+00DE 7E00            183             MOV R6, #00H
+                     184     
+00E0                 185     LCD_DISPLAY_NUMBERS:
+00E0 AB11            186             MOV R3, 11H
+00E2 AA10            187             MOV R2, 10H
+                     188             
+00E4 7C03            189             MOV R4, #03H
+A51 MACRO ASSEMBLER  FINAL01                                                              05/08/2024 21:05:17 PAGE     4
+
+00E6 7DE8            190             MOV R5, #0E8H   ; 03E8H = 1000D
+00E8 AF03            191             MOV R7, 03H
+00EA AE02            192             MOV R6, 02H
+00EC 12007A          193             LCALL DIVISION  
+00EF 7C00            194             MOV R4, #00H
+00F1 7D0A            195             MOV R5, #0AH
+00F3 12007A          196             LCALL DIVISION
+00F6 8D1C            197             MOV 1CH, R5             ; Move thousands place to 0CH
+                     198             
+00F8 7C00            199             MOV R4, #00H
+00FA 7D64            200             MOV R5, #64H    ;0064H = 100D
+00FC AF03            201             MOV R7, 03H
+00FE AE02            202             MOV R6, 02H
+0100 12007A          203             LCALL DIVISION  
+0103 7C00            204             MOV R4, #00H
+0105 7D0A            205             MOV R5, #0AH
+0107 12007A          206             LCALL DIVISION
+010A 8D1D            207             MOV 1DH, R5             ; Move hundreds place to 0DH
+                     208             
+010C 7C00            209             MOV R4, #00H
+010E 7D0A            210             MOV R5, #0AH    
+0110 AF03            211             MOV R7, 03H
+0112 AE02            212             MOV R6, 02H
+0114 12007A          213             LCALL DIVISION  
+0117 7C00            214             MOV R4, #00H
+0119 7D0A            215             MOV R5, #0AH
+011B 12007A          216             LCALL DIVISION
+011E 8D1E            217             MOV 1EH, R5             ; Move tens place to 0EH
+                     218             
+0120 AE02            219             MOV R6, 02H
+0122 AF03            220             MOV R7, 03H
+0124 7C00            221             MOV R4, #00H
+0126 7D0A            222             MOV R5, #0AH
+0128 12007A          223             LCALL DIVISION
+012B 8D1F            224             MOV 1FH, R5             ; Move ones place to 0FH
+                     225             
+012D E51C            226             MOV A, 01CH             ; Move thousands to A
+012F 2430            227             ADD A, #30H             ; Add 30H
+0131 FF              228             MOV R7, A
+0132 F51C            229             MOV 1CH, A
+0134 1201A8          230             LCALL LCD_WRD
+                     231             
+0137 E51D            232             MOV A, 01DH             ; Move hundreds to A
+0139 2430            233             ADD A, #30H             ; Add 30H
+013B FF              234             MOV R7, A
+013C F51D            235             MOV 1DH, A
+013E 1201A8          236             LCALL LCD_WRD
+                     237             
+0141 E51E            238             MOV A, 01EH             ; Move tens to A
+0143 2430            239             ADD A, #30H             ; Add 30H
+0145 FF              240             MOV R7, A
+0146 F51E            241             MOV 1EH, A
+0148 1201A8          242             LCALL LCD_WRD
+                     243             
+014B E51F            244             MOV A, 01FH             ; Move ones to A
+014D 2430            245             ADD A, #30H             ; Add 30H
+014F FF              246             MOV R7, A
+0150 F51F            247             MOV 1FH, A
+0152 0201A8          248             LJMP LCD_WRD
+                     249             
+0155                 250     DELAY:
+0155 D3              251             SETB C
+0156 EF              252             MOV A, R7
+0157 9400            253             SUBB A, #00H
+0159 EE              254             MOV A, R6
+015A 9400            255             SUBB A, #00H
+A51 MACRO ASSEMBLER  FINAL01                                                              05/08/2024 21:05:17 PAGE     5
+
+015C                 256     DELAY_HERE:
+015C 4015            257             JC DELAY_DONE
+015E E4              258             CLR A
+015F FD              259             MOV R5, A
+0160 FC              260             MOV R4, A
+0161                 261     DELAY_AGAIN:
+0161 0D              262             INC R5
+0162 BD0001          263             CJNE R5, #00H, DELAY_SKIP
+0165 0C              264             INC R4
+0166                 265     DELAY_SKIP:
+0166 BC01F8          266             CJNE R4, #01H, DELAY_AGAIN
+0169 BDF4F5          267             CJNE R5, #0F4H, DELAY_AGAIN
+016C EF              268             MOV A, R7
+016D 1F              269             DEC R7
+016E 70E5            270             JNZ DELAY
+0170 1E              271             DEC R6
+0171 80E2            272             SJMP DELAY
+0173                 273     DELAY_DONE:
+0173 22              274     RET
+                     275     
+0174 7F38            276     MOV R7, #38H
+                     277     
+0176                 278     DELAY_1MS:      ; A delay function with parameters R6 and R7
+0176 D3              279             SETB C
+0177 EF              280             MOV A, R7
+0178 9400            281             SUBB A, #00H
+017A EE              282             MOV A, R6
+017B 9400            283             SUBB A, #00H
+017D 400F            284             JC DELAY_1MS_DONE
+017F 7DC7            285                     MOV R5, #0C7H
+0181 7C01            286             H1:     MOV R4, #01H
+0183 DCFE            287             H2:     DJNZ R4, H2
+0185 DDFA            288                     DJNZ R5, H1
+0187 EF              289             MOV A, R7
+0188 1F              290             DEC R7
+0189 70EB            291             JNZ DELAY_1MS
+018B 1E              292             DEC R6
+018C 80E8            293             SJMP DELAY_1MS
+018E                 294     DELAY_1MS_DONE:
+018E 22              295     RET
+                     296             
+018F                 297     LCD_WRC: ; LCD Write Command
+018F C2A7            298             CLR LCD_EN
+0191 C2A6            299             CLR LCD_RS
+0193 C2A5            300             CLR LCD_RW
+                     301             
+0195 8F80            302             MOV P0, R7
+0197 7F01            303             MOV R7, #01H
+0199 7E00            304             MOV R6, #00H
+019B 3176            305             ACALL DELAY_1MS
+                     306             
+019D D2A7            307             SETB LCD_EN
+019F 7F05            308             MOV R7, #05H
+01A1 7E00            309             MOV R6, #00H
+01A3 3176            310             ACALL DELAY_1MS
+                     311             
+01A5 C2A7            312             CLR LCD_EN
+01A7 22              313     RET
+                     314     
+01A8                 315     LCD_WRD: ; LCD Write Data
+01A8 C2A7            316             CLR LCD_EN
+01AA D2A6            317             SETB LCD_RS
+01AC C2A5            318             CLR LCD_RW
+                     319             
+01AE 8F80            320             MOV LCD_DATAPINS, R7
+01B0 7F01            321             MOV R7, #01H
+A51 MACRO ASSEMBLER  FINAL01                                                              05/08/2024 21:05:17 PAGE     6
+
+01B2 7E00            322             MOV R6, #00H
+01B4 3176            323             ACALL DELAY_1MS
+                     324             
+01B6 D2A7            325             SETB LCD_EN
+01B8 7F05            326             MOV R7, #05H
+01BA 7E00            327             MOV R6, #00H
+01BC 3176            328             ACALL DELAY_1MS
+                     329             
+01BE C2A7            330             CLR LCD_EN
+01C0 22              331     RET
+                     332     
+01C1                 333     LCD_INIT:
+01C1 7F38            334             MOV R7, #38H    ;Function Set: 8-bit data, 2-line display, 5x8 font
+01C3 12018F          335             LCALL LCD_WRC
+01C6 7F0C            336             MOV R7, #0CH    ;Display On/Off Control: Display on, cursor off, blink off
+01C8 12018F          337             LCALL LCD_WRC
+01CB 7F06            338             MOV R7, #06H    ;Entry Mode Set: Increment cursor position, no display shift
+01CD 12018F          339             LCALL LCD_WRC
+01D0 7F01            340             MOV R7, #01H    ;Clear Display
+01D2 12018F          341             LCALL LCD_WRC
+01D5 7F80            342             MOV R7, #80H    ;Set DDRAM Address: Set cursor to beginning of first line
+01D7 12018F          343             LCALL LCD_WRC
+01DA 22              344     RET
+01DB                 345     END1:
+                     346     END     
+A51 MACRO ASSEMBLER  FINAL01                                                              05/08/2024 21:05:17 PAGE     7
+
+SYMBOL TABLE LISTING
+------ ----- -------
+
+
+N A M E              T Y P E  V A L U E   ATTRIBUTES
+
+B . . . . . . . . .  D ADDR   00F0H   A   
+CONT1 . . . . . . .  C ADDR   001AH   A   
+DELAY . . . . . . .  C ADDR   0155H   A   
+DELAY_1MS . . . . .  C ADDR   0176H   A   
+DELAY_1MS_DONE. . .  C ADDR   018EH   A   
+DELAY_AGAIN . . . .  C ADDR   0161H   A   
+DELAY_DONE. . . . .  C ADDR   0173H   A   
+DELAY_HERE. . . . .  C ADDR   015CH   A   
+DELAY_SKIP. . . . .  C ADDR   0166H   A   
+DIVISION. . . . . .  C ADDR   007AH   A   
+DIV_JMP1. . . . . .  C ADDR   0088H   A   
+DIV_JMP2. . . . . .  C ADDR   00A9H   A   
+DIV_JMP3. . . . . .  C ADDR   00A2H   A   
+DIV_JMP4. . . . . .  C ADDR   00CEH   A   
+DIV_JMP5. . . . . .  C ADDR   00C7H   A   
+DIV_JMP6. . . . . .  C ADDR   00C9H   A   
+DIV_LOOP1 . . . . .  C ADDR   008EH   A   
+DIV_LOOP2 . . . . .  C ADDR   00B8H   A   
+END1. . . . . . . .  C ADDR   01DBH   A   
+H1. . . . . . . . .  C ADDR   0181H   A   
+H2. . . . . . . . .  C ADDR   0183H   A   
+LCD_DATAPINS. . . .  D ADDR   0080H   A   
+LCD_DISPLAY_NUMBERS  C ADDR   00E0H   A   
+LCD_EN. . . . . . .  B ADDR   00A0H.7 A   
+LCD_INIT. . . . . .  C ADDR   01C1H   A   
+LCD_RS. . . . . . .  B ADDR   00A0H.6 A   
+LCD_RW. . . . . . .  B ADDR   00A0H.5 A   
+LCD_WRC . . . . . .  C ADDR   018FH   A   
+LCD_WRD . . . . . .  C ADDR   01A8H   A   
+MAIN. . . . . . . .  C ADDR   0000H   A   
+MAIN_LOOP . . . . .  C ADDR   000EH   A   
+MAIN_SKIP1. . . . .  C ADDR   0034H   A   
+MAIN_SKIP2. . . . .  C ADDR   0068H   A   
+MAIN_SKIP3. . . . .  C ADDR   003FH   A   
+MAIN_SKIP4. . . . .  C ADDR   004DH   A   
+MAIN_SKIP5. . . . .  C ADDR   0049H   A   
+MAIN_SKIP6. . . . .  C ADDR   0061H   A   
+MAIN_SKIP7. . . . .  C ADDR   0070H   A   
+OV. . . . . . . . .  B ADDR   00D0H.2 A   
+P0. . . . . . . . .  D ADDR   0080H   A   
+P2. . . . . . . . .  D ADDR   00A0H   A   
+
+
+REGISTER BANK(S) USED: 0 
+
+
+ASSEMBLY COMPLETE.  0 WARNING(S), 0 ERROR(S)
